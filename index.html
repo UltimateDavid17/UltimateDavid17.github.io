@@ -1,0 +1,289 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>User Authentication</title>
+    <style>
+        body {
+            background: linear-gradient(to bottom, #2f2f2f, #0000ff 100vh);
+            color: white;
+            font-family: Arial, sans-serif;
+            margin: 0;
+            padding: 0;
+            min-height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            background-attachment: fixed;
+            position: relative;
+        }
+        .auth-buttons {
+            position: absolute;
+            top: 20px;
+            right: 20px;
+            display: flex;
+            gap: 10px;
+        }
+        .auth-buttons button {
+            background: transparent;
+            border: 2px solid #1a73e8;
+            color: white;
+            padding: 10px 20px;
+            border-radius: 25px;
+            font-size: 14px;
+            cursor: pointer;
+            transition: background 0.3s, color 0.3s;
+        }
+        .auth-buttons button:hover {
+            background: #1a73e8;
+            color: white;
+        }
+        .container {
+            background: rgba(255, 255, 255, 0.1);
+            padding: 20px;
+            border-radius: 10px;
+            display: none;
+        }
+        .blue-page {
+            background-color: #000080;
+            color: white;
+            min-height: 100vh;
+            display: none;
+            align-items: center;
+            justify-content: center;
+            font-size: 48px;
+            font-family: Arial, sans-serif;
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            z-index: 10;
+            flex-direction: column;
+        }
+        .hidden {
+            display: none;
+        }
+        .menu-icon {
+            position: absolute;
+            top: 20px;
+            left: 20px;
+            cursor: pointer;
+            z-index: 20;
+        }
+        .side-menu {
+            position: absolute;
+            top: 60px;
+            left: 20px;
+            background-color: rgba(0, 0, 0, 0.8);
+            padding: 10px;
+            border-radius: 5px;
+            display: none;
+            flex-direction: column;
+            gap: 10px;
+        }
+        .side-menu a {
+            color: white;
+            text-decoration: none;
+            padding: 10px;
+            border-radius: 5px;
+            transition: background 0.3s;
+            font-size: 14px;
+        }
+        .side-menu a:hover {
+            background-color: rgba(255, 255, 255, 0.2);
+        }
+        .messages-search {
+            margin-bottom: 10px;
+        }
+        .messages-search input {
+            padding: 5px;
+            width: calc(100% - 10px);
+        }
+        .messages-list {
+            max-height: 150px;
+            overflow-y: auto;
+            border: 1px solid white;
+            padding: 5px;
+        }
+        .chat-box {
+            margin-top: 10px;
+        }
+        .chat-box textarea {
+            width: calc(100% - 10px);
+            height: 50px;
+            padding: 5px;
+        }
+        .chat-box button {
+            padding: 5px 10px;
+            margin-top: 5px;
+        }
+        /* Added styles for consent popup */
+        .consent-popup {
+            position: fixed;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            background-color: rgba(0, 0, 0, 0.8);
+            padding: 20px;
+            border-radius: 10px;
+            z-index: 100;
+        }
+        .consent-content {
+            text-align: center;
+        }
+        .consent-content h2 {
+            margin-bottom: 10px;
+        }
+        .consent-buttons {
+            margin-top: 20px;
+        }
+        .consent-buttons button {
+            background-color: #1a73e8;
+            border: none;
+            color: white;
+            padding: 10px 20px;
+            border-radius: 25px;
+            cursor: pointer;
+            transition: background 0.3s, color 0.3s;
+            margin-right: 10px;
+        }
+        .consent-buttons button:hover {
+            background-color: #0d47a1;
+        }
+        .consent-buttons a {
+            color: white;
+            text-decoration: none;
+        }
+        /* Styles for file manager */
+        .file-manager {
+            width: 600px;
+            height: 400px;
+            background-color: #222;
+            border: 2px solid #000;
+            border-radius: 10px;
+            overflow: auto;
+            margin-top: 20px;
+            padding: 10px;
+        }
+        .file-manager-item {
+            color: #fff;
+            margin-bottom: 10px;
+        }
+    </style>
+</head>
+<body>
+
+<div class="auth-buttons">
+    <button id="showRegister">Register</button>
+    <button id="showLogin">Sign In</button>
+</div>
+
+<div class="container" id="authContainer">
+    <h2>Create Account</h2>
+    <form id="createAccountForm">
+        <input type="text" id="username" placeholder="Benutzername" required>
+        <input type="email" id="email" placeholder="Email" required>
+        <input type="password" id="password" placeholder="Password (min 6 characters)" required>
+        <button type="submit">Create Account</button>
+    </form>
+</div>
+
+<div class="container" id="loginContainer">
+    <h2>Login</h2>
+    <form id="loginForm">
+        <input type="text" id="loginUsername" placeholder="Benutzername" required>
+        <input type="password" id="loginPassword" placeholder="Password" required>
+        <button type="submit">Login</button>
+    </form>
+</div>
+
+<div class="blue-page" id="bluePage">
+    <h1>Benutzersuche</h1>
+    <input type="text" id="searchUser" placeholder="Nach Benutzer suchen">
+    <div id="searchResults"></div>
+</div>
+
+<!-- JavaScript Code -->
+<script>
+    // Funktionen für die Anzeige von Registrierungs- und Anmeldeformularen
+    document.getElementById('showRegister').addEventListener('click', function() {
+        document.getElementById('authContainer').style.display = 'block';
+        document.getElementById('loginContainer').style.display = 'none';
+    });
+
+    document.getElementById('showLogin').addEventListener('click', function() {
+        document.getElementById('authContainer').style.display = 'none';
+        document.getElementById('loginContainer').style.display = 'block';
+    });
+
+    // Funktionen für die Anmeldung und Registrierung
+    document.getElementById('createAccountForm').addEventListener('submit', function(event) {
+        event.preventDefault();
+        const username = document.getElementById('username').value;
+        const email = document.getElementById('email').value;
+        const password = document.getElementById('password').value;
+
+        fetch('/register', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({ username, email, password })
+        }).then(response => response.json()).then(data => {
+            if (data.success) {
+                alert('Account created successfully!');
+                document.getElementById('authContainer').style.display = 'none';
+                document.getElementById('bluePage').style.display = 'flex';
+            } else {
+                alert('Error: ' + data.message);
+            }
+        });
+    });
+
+    document.getElementById('loginForm').addEventListener('submit', function(event) {
+        event.preventDefault();
+        const username = document.getElementById('loginUsername').value;
+        const password = document.getElementById('loginPassword').value;
+
+        fetch('/login', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({ username, password })
+        }).then(response => response.json()).then(data => {
+            if (data.success) {
+                alert('Logged in successfully!');
+                document.getElementById('loginContainer').style.display = 'none';
+                document.getElementById('bluePage').style.display = 'flex';
+            } else {
+                alert('Error: ' + data.message);
+            }
+        });
+    });
+
+    // Benutzer suchen
+    document.getElementById('searchUser').addEventListener('input', function() {
+        const query = document.getElementById('searchUser').value;
+        fetch('/search', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({ query })
+        }).then(response => response.json()).then(data => {
+            const results = document.getElementById('searchResults');
+            results.innerHTML = '';
+            data.users.forEach(user => {
+                const div = document.createElement('div');
+                div.textContent = user.username;
+                results.appendChild(div);
+            });
+        });
+    });
+</script>
+
+</body>
+</html>
